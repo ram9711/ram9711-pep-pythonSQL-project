@@ -48,14 +48,54 @@ def main():
 
 # This function will load the users.csv file into the users table, discarding any records with incomplete data
 def load_and_clean_users(file_path):
+    
+    with open(file_path, 'r') as file:
+        reader = csv.reader(file)
+        header = next(reader)  
 
-    print("TODO: load_users")
+        for row in reader:
+            if len(row) == 2:
+                firstName, lastName = row
+
+                if firstName.strip() and lastName.strip():
+                    cursor.execute('''
+                        INSERT INTO users (firstName, lastName) 
+                        VALUES (?, ?)
+                    ''', (firstName.strip(), lastName.strip()))
+                     
+    
+    #print("TODO: load_users")
 
 
 # This function will load the callLogs.csv file into the callLogs table, discarding any records with incomplete data
 def load_and_clean_call_logs(file_path):
 
-    print("TODO: load_call_logs")
+    with open(file_path, 'r') as file:
+        reader = csv.reader(file)
+        header = next(reader)  # Skip the header row
+
+        for row in reader:
+
+            # Ensure the row has exactly 5 columns
+            if len(row) == 5:
+                phoneNumber, startTime, endTime, Direction, userId = row
+
+                # Check if all required fields are present and non-empty
+                if all(field.strip() for field in [phoneNumber, startTime, endTime, Direction, userId]):
+                    try:
+                        startTimeEpoch = int(startTime.strip())
+                        endTimeEpoch = int(endTime.strip())
+                        userId = int(userId.strip())
+                    except ValueError:
+                        continue
+
+                    # Insert the valid row into the database
+                    cursor.execute('''
+                        INSERT INTO callLogs (phoneNumber, startTime, endTime, Direction, userId)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (phoneNumber.strip(), startTime, endTime, Direction.strip(), userId))
+
+    #print("TODO: load_call_logs")
 
 
 # This function will write analytics data to testUserAnalytics.csv - average call time, and number of calls per user.
@@ -63,14 +103,70 @@ def load_and_clean_call_logs(file_path):
 # example: 1,105.0,4 - where 1 is the userId, 105.0 is the avgDuration, and 4 is the numCalls.
 def write_user_analytics(csv_file_path):
 
-    print("TODO: write_user_analytics")
+    query = '''
+        SELECT
+            userId,
+            AVG(endTime - startTime) AS avgDuration,
+            COUNT(*) AS numCalls
+        FROM
+            callLogs
+        GROUP BY
+            userId
+    '''
+    
+    cursor.execute(query)
+    results = cursor.fetchall()
+
+    # Write results to CSV file
+    with open(csv_file_path, 'w', newline='') as file:
+        writer = csv.writer(file)
+        
+        # Write header
+        writer.writerow(['userId', 'avgDuration', 'numCalls'])
+        
+        # Write data rows
+        for row in results:
+            userId, avgDuration, numCalls = row
+            writer.writerow([userId, f"{avgDuration:.1f}", numCalls])
+
+    #print("TODO: write_user_analytics")
 
 
 # This function will write the callLogs ordered by userId, then start time.
 # Then, write the ordered callLogs to orderedCalls.csv
 def write_ordered_calls(csv_file_path):
 
-    print("TODO: write_ordered_calls")
+    query = '''
+        SELECT
+            callId,
+            phoneNumber,
+            startTime,
+            endTime,
+            direction,
+            userId
+        FROM
+            callLogs
+        ORDER BY
+            userId,
+            startTime
+    '''
+    
+    # Execute the query and fetch all results
+    cursor.execute(query)
+    results = cursor.fetchall()
+
+    # Open the CSV file for writing
+    with open(csv_file_path, 'w', newline='') as file:
+        writer = csv.writer(file)
+        
+        # Write the header row
+        writer.writerow(['callId', 'phoneNumber', 'startTime', 'endTime', 'direction', 'userId'])
+        
+        # Write each result row
+        for row in results:
+            writer.writerow(row)
+
+    #print("TODO: write_ordered_calls")
 
 
 
