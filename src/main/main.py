@@ -129,7 +129,7 @@ def write_user_analytics(csv_file_path):
             userId, avgDuration, numCalls = row
             writer.writerow([userId, f"{avgDuration:.1f}", numCalls])
 
-    #print("TODO: write_user_analytics")
+    print("TODO: write_user_analytics")
 
 
 # This function will write the callLogs ordered by userId, then start time.
